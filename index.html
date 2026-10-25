@@ -4,25 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boucarut Organisateur</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
+    <!-- Firebase App (Core) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firebase Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <style>
         :root {
-            --bordeaux: #6b1d2f;
-            --bordeaux-dark: #4a121f;
+            --primary: #5c763d;
+            --primary-dark: #43552b;
             --gold: #d4af37;
             --slate: #2c3e50;
             --light-bg: #f8f9fa;
             --card-bg: #ffffff;
             --text-dark: #2d3748;
-            --text-muted: #718096;
-            
-            --prio-urgent: #e53e3e;
-            --prio-haute: #dd6b20;
-            --prio-moyenne: #3182ce;
-            --prio-basse: #38a169;
         }
 
         * {
@@ -39,608 +34,342 @@
         }
 
         header {
-            background: linear-gradient(135deg, var(--bordeaux-dark), var(--bordeaux));
+            background-color: var(--primary);
             color: white;
-            padding: 20px 15px;
+            padding: 1rem;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-bottom: 3px solid var(--gold);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         header h1 {
-            font-size: 1.5rem;
-            letter-spacing: 1px;
-            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.2rem;
         }
 
         header p {
             font-size: 0.85rem;
-            color: var(--gold);
-            margin-top: 4px;
-        }
-
-        nav {
-            display: flex;
-            background: var(--slate);
-            overflow-x: auto;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        nav button {
-            flex: 1;
-            min-width: 110px;
-            padding: 14px 8px;
-            background: none;
-            border: none;
-            color: #a0aec0;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        nav button.active {
-            color: white;
-            border-bottom-color: var(--gold);
-            background: rgba(255,255,255,0.05);
+            opacity: 0.9;
         }
 
         .container {
-            max-width: 800px;
+            padding: 1rem;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 15px;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
         }
 
         .card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 12px;
-            color: var(--bordeaux);
-            border-bottom: 2px solid #edf2f7;
-            padding-bottom: 6px;
+        h2 {
+            font-size: 1rem;
+            color: var(--primary-dark);
+            margin-bottom: 0.8rem;
+            border-bottom: 2px solid var(--light-bg);
+            padding-bottom: 0.3rem;
         }
 
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 0.8rem;
         }
 
         label {
             display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: var(--text-dark);
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            color: var(--slate);
         }
 
-        input, select, textarea {
+        select, input, textarea {
             width: 100%;
-            padding: 10px 12px;
+            padding: 0.6rem;
             border: 1px solid #cbd5e0;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background: #fff;
+            border-radius: 6px;
+            font-size: 0.9rem;
         }
 
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--bordeaux);
-            box-shadow: 0 0 0 3px rgba(107, 29, 47, 0.1);
-        }
-
-        .row-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn {
-            display: inline-block;
-            width: 100%;
-            padding: 12px;
-            background: var(--bordeaux);
+        button.btn {
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
+            padding: 0.7rem 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            width: 100%;
             cursor: pointer;
             text-align: center;
-            transition: background 0.2s;
         }
 
-        .btn:hover {
-            background: var(--bordeaux-dark);
+        button.btn:active {
+            background-color: var(--primary-dark);
         }
 
-        .filters {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-
-        .chip {
-            padding: 6px 14px;
-            border-radius: 20px;
-            background: #e2e8f0;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            border: none;
-        }
-
-        .chip.active {
-            background: var(--bordeaux);
-            color: white;
-        }
-
-        .task-card {
-            background: white;
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 10px;
-            border-left: 5px solid var(--prio-moyenne);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        .task-item {
+            background: #fff;
+            border-left: 4px solid var(--primary);
+            padding: 0.8rem;
+            margin-bottom: 0.6rem;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
         }
 
-        .task-card.prio-Urgent { border-left-color: var(--prio-urgent); }
-        .task-card.prio-Haute { border-left-color: var(--prio-haute); }
-        .task-card.prio-Moyenne { border-left-color: var(--prio-moyenne); }
-        .task-card.prio-Basse { border-left-color: var(--prio-basse); }
-
-        .task-card.status-done {
-            opacity: 0.55;
-            background: #f7fafc;
+        .task-info h4 {
+            font-size: 0.95rem;
+            color: var(--slate);
+            margin-bottom: 0.2rem;
         }
 
-        .task-info h3 {
-            font-size: 1rem;
-            margin-bottom: 4px;
-            color: var(--text-dark);
-        }
-
-        .task-meta {
+        .task-info p {
             font-size: 0.8rem;
-            color: var(--text-muted);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
+            color: #64748b;
+            margin-bottom: 0.2rem;
         }
 
-        .badge {
+        .task-badge {
             display: inline-block;
-            padding: 2px 8px;
+            background: #e2e8f0;
+            padding: 0.1rem 0.4rem;
             border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: #edf2f7;
-            color: var(--text-dark);
+            font-size: 0.7rem;
+            color: #475569;
         }
 
-        .badge-cat { background: #e2e8f0; }
-        .badge-rang { background: #feebc8; color: #7b341e; }
-        .badge-status-todo { background: #fed7d7; color: #9b2c2c; }
-        .badge-status-progress { background: #feebc8; color: #9c4221; }
-        .badge-status-done { background: #c6f6d5; color: #22543d; }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #e53e3e;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+        }
 
-        .task-actions {
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem 0;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            border-top: 1px solid #e2e8f0;
+            z-index: 100;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            color: #64748b;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-        }
-
-        .btn-action {
-            background: #edf2f7;
-            border: none;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            align-items: center;
             cursor: pointer;
-            white-space: nowrap;
         }
 
-        .btn-status { background: #e2e8f0; color: #2d3748; }
-        .btn-delete { background: #fed7d7; color: #9b2c2c; }
-
-        .parcelles-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 10px;
-        }
-
-        .parcelle-item {
-            background: white;
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .parcelle-item:hover {
-            border-color: var(--bordeaux);
-            box-shadow: 0 2px 6px rgba(107, 29, 47, 0.15);
-        }
-
-        .parcelle-item .num {
+        nav button.active {
+            color: var(--primary);
             font-weight: bold;
-            color: var(--bordeaux);
-            font-size: 0.9rem;
         }
 
-        .parcelle-item .nom {
-            font-weight: 600;
-            margin: 2px 0;
+        nav button span.icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.1rem;
         }
 
-        .parcelle-item .type {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        .view-section {
+            display: none;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-muted);
-            font-style: italic;
+        .view-section.active {
+            display: block;
+        }
+
+        .parcel-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .parcel-box {
+            background: white;
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: 1px solid #e2e8f0;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>BOUCARUT ORGANISATEUR</h1>
-        <p>Gestion du Domaine & Travaux</p>
+        <h1>Domaine Boucarut</h1>
+        <p>Organisateur Vignoble (En direct)</p>
     </header>
 
-    <nav>
-        <button class="active" onclick="showTab('dashboard')">Tableau de bord</button>
-        <button onclick="showTab('add-task')">+ Nouvelle tâche</button>
-        <button onclick="showTab('parcelles')">Parcelles</button>
-    </nav>
-
     <div class="container">
-
-        <!-- TAB 1: DASHBOARD -->
-        <div id="dashboard" class="tab-content active">
-            <div class="filters">
-                <button class="chip active" onclick="filterCat('ALL', this)">Toutes</button>
-                <button class="chip" onclick="filterCat('Vigne', this)">Vigne</button>
-                <button class="chip" onclick="filterCat('Cave et Chai', this)">Cave & Chai</button>
-                <button class="chip" onclick="filterCat('Entretien du Domaine', this)">Entretien Domaine</button>
-                <button class="chip" onclick="filterCat('Administratif', this)">Administratif</button>
-            </div>
-
-            <div id="tasks-list"><div class="empty-state">Chargement des tâches...</div></div>
-        </div>
-
-        <!-- TAB 2: ADD TASK -->
-        <div id="add-task" class="tab-content">
+        <!-- VUE TABLEAU DE BORD / TÂCHES -->
+        <div id="view-tasks" class="view-section active">
             <div class="card">
-                <h2>Créer une tâche</h2>
-                <form id="task-form" onsubmit="saveTask(event)">
+                <h2>Nouvelle Tâche</h2>
+                <form id="task-form">
                     <div class="form-group">
-                        <label>Titre de l'intervention *</label>
-                        <input type="text" id="task-title" placeholder="Ex: Remplacement piquets, Décavaillonnage..." required>
-                    </div>
-
-                    <div class="row-grid">
-                        <div class="form-group">
-                            <label>Catégorie *</label>
-                            <select id="task-cat" required onchange="toggleParcelleSelect()">
-                                <option value="Vigne">Vigne</option>
-                                <option value="Cave et Chai">Cave et Chai</option>
-                                <option value="Entretien du Domaine">Entretien du Domaine</option>
-                                <option value="Administratif">Administratif</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Priorité *</label>
-                            <select id="task-prio" required>
-                                <option value="Urgent">🔴 Urgent</option>
-                                <option value="Haute" selected>🟠 Haute</option>
-                                <option value="Moyenne">🔵 Moyenne</option>
-                                <option value="Basse">🟢 Basse</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="parcelle-group">
-                        <label>Parcelle / Zone</label>
-                        <select id="task-parcelle" onchange="updateRangHint()">
-                            <option value="">-- Sélectionner une parcelle --</option>
+                        <label for="task-parcel">Parcelle</label>
+                        <select id="task-parcel" required>
+                            <option value="">Sélectionner une parcelle...</option>
+                            <option value="Parcelle 1 - Les Garrigues">Parcelle 1 - Les Garrigues</option>
+                            <option value="Parcelle 2 - Vignes Blanches">Parcelle 2 - Vignes Blanches</option>
+                            <option value="Parcelle 3 - Ceps du Roy">Parcelle 3 - Ceps du Roy</option>
+                            <option value="Parcelle 4 - Plan de Dieu">Parcelle 4 - Plan de Dieu</option>
                         </select>
                     </div>
-
-                    <div class="form-group" id="rang-group">
-                        <label>Numéro de rang(s) précis</label>
-                        <input type="text" id="task-rang" placeholder="Ex: Rang 4, ou Rangs 12 à 18">
-                        <small id="rang-hint" style="color: var(--text-muted); font-size: 0.75rem;"></small>
-                    </div>
-
                     <div class="form-group">
-                        <label>Notes / Instructions complémentaires</label>
-                        <textarea id="task-notes" rows="3" placeholder="Détails du matériel nécessaire, observations..."></textarea>
+                        <label for="task-type">Type de Travail</label>
+                        <select id="task-type" required>
+                            <option value="Ébourgeonnage">Ébourgeonnage</option>
+                            <option value="Relevage / Palissage">Relevage / Palissage</option>
+                            <option value="Écimage">Écimage</option>
+                            <option value="Désherbage / Décavaillonnage">Désherbage / Décavaillonnage</option>
+                            <option value="Traitements / Phyto">Traitements / Phyto</option>
+                            <option value="Vendanges">Vendanges</option>
+                            <option value="Autre">Autre</option>
+                        </select>
                     </div>
-
+                    <div class="form-group">
+                        <label for="task-comment">Commentaire / Notes</label>
+                        <textarea id="task-comment" rows="2" placeholder="Détails optionnels..."></textarea>
+                    </div>
                     <button type="submit" class="btn">Enregistrer la tâche</button>
                 </form>
             </div>
-        </div>
 
-        <!-- TAB 3: PARCELLES -->
-        <div id="parcelles" class="tab-content">
             <div class="card">
-                <h2>Liste des Parcelles</h2>
-                <div class="form-group" style="margin-bottom: 10px;">
-                    <input type="text" id="search-parcelle" placeholder="Rechercher par nom, numéro, cépage..." oninput="renderParcelles()">
+                <h2>Tâches Enregistrées</h2>
+                <div id="tasks-list">
+                    <p style="font-size: 0.85rem; color: #718096; text-align: center; padding: 1rem;">Chargement des tâches...</p>
                 </div>
-                <div class="parcelles-list" id="parcelles-container"></div>
             </div>
         </div>
 
+        <!-- VUE PARCELLES -->
+        <div id="view-parcels" class="view-section">
+            <div class="card">
+                <h2>Liste des Parcelles</h2>
+                <div class="parcel-grid">
+                    <div class="parcel-box"><strong>Parcelle 1</strong><br>Les Garrigues</div>
+                    <div class="parcel-box"><strong>Parcelle 2</strong><br>Vignes Blanches</div>
+                    <div class="parcel-box"><strong>Parcelle 3</strong><br>Ceps du Roy</div>
+                    <div class="parcel-box"><strong>Parcelle 4</strong><br>Plan de Dieu</div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- BARRE DE NAVIGATION -->
+    <nav>
+        <button class="nav-btn active" onclick="switchView('tasks', 0)">
+            <span class="icon">📋</span>
+            Tâches
+        </button>
+        <button class="nav-btn" onclick="switchView('parcels', 1)">
+            <span class="icon">🍇</span>
+            Parcelles
+        </button>
+    </nav>
+
     <script>
+        // Configuration Firebase
         const firebaseConfig = {
             databaseURL: "https://boucarut-organisateur-default-rtdb.europe-west1.firebasedatabase.app"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
+        // Gestion des vues
+        function switchView(viewName, btnIndex) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+            if(viewName === 'tasks') {
+                document.getElementById('view-tasks').classList.add('active');
+            } else if(viewName === 'parcels') {
+                document.getElementById('view-parcels').classList.add('active');
+            }
+            document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
+        }
+
+        // Écoute en temps réel de la base de données Firebase
         const tasksRef = db.ref('tasks');
-
-        const PARCELLES = [
-            { id: 1, nom: "Viognier", rangs: 15, type: "IGP" },
-            { id: 2, nom: "Roussanne", rangs: 22, type: "IGP" },
-            { id: 3, nom: "Marselan", rangs: 27, type: "IGP" },
-            { id: 4, nom: "Merlot", rangs: 31, type: "IGP" },
-            { id: 5, nom: "Vieille Syrah plaine", rangs: 10, type: "IGP" },
-            { id: 6, nom: "Jeune Syrah plaine", rangs: 18, type: "IGP" },
-            { id: 7, nom: "Grenache Pylône", rangs: 18, type: "IGP" },
-            { id: 8, nom: "Jachère vieux grenache", rangs: 0, type: "IGP" },
-            { id: 9, nom: "Grenache vieux cabanon", rangs: 9, type: "IGP" },
-            { id: 10, nom: "Syrah Pontin", rangs: 25, type: "IGP" },
-            { id: 11, nom: "Jeune Grenache cavallières", rangs: 7, type: "IGP" },
-            { id: 12, nom: "Grenache Cavallières", rangs: 0, type: "IGP" },
-            { id: 13, nom: "Mourvèdre chapelle", rangs: 0, type: "AOC" },
-            { id: 14, nom: "Grenache Château", rangs: 18, type: "AOC" },
-            { id: 15, nom: "Jachère cave", rangs: 0, type: "AOC" },
-            { id: 16, nom: "Mourvèdre cavallières", rangs: 17, type: "AOC" },
-            { id: 17, nom: "Plateau", rangs: 89, type: "AOC" },
-            { id: 18, nom: "Jachère plateau", rangs: 0, type: "AOC" },
-            { id: 19, nom: "Viognier", rangs: 11, type: "AOC" },
-            { id: 20, nom: "Roussanne", rangs: 11, type: "AOC" },
-            { id: 21, nom: "Clos échalas", rangs: 4, type: "AOC" },
-            { id: 22, nom: "Syrah petit Beurreux", rangs: 17, type: "AOC" },
-            { id: 23, nom: "Cinsault", rangs: 7, type: "AOC" },
-            { id: 24, nom: "Syrah chenins", rangs: 40, type: "AOC" },
-            { id: 25, nom: "Grenache chemins", rangs: 46, type: "AOC" },
-            { id: 26, nom: "Jachère chemins", rangs: 0, type: "AOC" },
-            { id: 27, nom: "Syrah Bosquet", rangs: 43, type: "AOC" },
-            { id: 28, nom: "Grenache Brequet", rangs: 51, type: "AOC" },
-            { id: 29, nom: "Tavel Maleven", rangs: 0, type: "Tavel / AOC" },
-            { id: 30, nom: "Tavel Romagnas", rangs: 0, type: "Tavel / AOC" },
-            { id: 0, nom: "Truffière", rangs: 0, type: "Autre" }
-        ];
-
-        let tasks = [];
-        let currentCatFilter = 'ALL';
-
-        function init() {
-            populateParcelleSelect();
-            renderParcelles();
-
-            tasksRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                tasks = [];
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        tasks.push({ id: key, ...data[key] });
-                    });
-                    tasks.sort((a, b) => b.timestamp - a.timestamp);
-                }
-                renderTasks();
-            });
-        }
-
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        
+        tasksRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const listEl = document.getElementById('tasks-list');
             
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-        }
+            if (!data) {
+                listEl.innerHTML = '<p style="font-size: 0.85rem; color: #718096; text-align: center; padding: 1rem;">Aucune tâche pour le moment.</p>';
+                return;
+            }
 
-        function populateParcelleSelect() {
-            const select = document.getElementById('task-parcelle');
-            select.innerHTML = '<option value="">-- Sélectionner une parcelle --</option>';
-            PARCELLES.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = `${p.id} - ${p.nom} (${p.type})`;
-                opt.textContent = `${p.id} - ${p.nom} (${p.type}) ${p.rangs ? '- ' + p.rangs + ' rangs' : ''}`;
-                select.appendChild(opt);
-            });
-        }
-
-        function updateRangHint() {
-            const val = document.getElementById('task-parcelle').value;
-            const hint = document.getElementById('rang-hint');
-            if(!val) { hint.textContent = ''; return; }
+            listEl.innerHTML = '';
+            // Transformation de l'objet Firebase en tableau
+            const tasksKeys = Object.keys(data).reverse(); // Les plus récentes en haut
             
-            const id = parseInt(val.split(' - ')[0]);
-            const p = PARCELLES.find(item => item.id === id);
-            if(p && p.rangs > 0) {
-                hint.textContent = `Cette parcelle compte ${p.rangs} rangs au total.`;
-            } else {
-                hint.textContent = '';
-            }
-        }
+            tasksKeys.forEach((key) => {
+                const task = data[key];
+                const item = document.createElement('div');
+                item.className = 'task-item';
+                item.innerHTML = `
+                    <div class="task-info">
+                        <h4>${task.parcel}</h4>
+                        <span class="task-badge">${task.type}</span>
+                        ${task.comment ? `<p style="margin-top: 4px;">${task.comment}</p>` : ''}
+                        <p style="font-size: 0.7rem; color: #a0aec0; margin-top: 4px;">${task.date}</p>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTask('${key}')">&times;</button>
+                `;
+                listEl.appendChild(item);
+            });
+        });
 
-        function toggleParcelleSelect() {
-            const cat = document.getElementById('task-cat').value;
-            const pGroup = document.getElementById('parcelle-group');
-            const rGroup = document.getElementById('rang-group');
-            if(cat === 'Vigne') {
-                pGroup.style.display = 'block';
-                rGroup.style.display = 'block';
-            } else {
-                pGroup.style.display = 'block';
-                rGroup.style.display = 'none';
-            }
-        }
-
-        function filterCat(cat, el) {
-            currentCatFilter = cat;
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            renderTasks();
-        }
-
-        function saveTask(e) {
+        // Soumission du formulaire
+        document.getElementById('task-form').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            const parcel = document.getElementById('task-parcel').value;
+            const type = document.getElementById('task-type').value;
+            const comment = document.getElementById('task-comment').value;
+
             const now = new Date();
             const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
 
             const newTask = {
-                title: document.getElementById('task-title').value,
-                cat: document.getElementById('task-cat').value,
-                prio: document.getElementById('task-prio').value,
-                parcelle: document.getElementById('task-parcelle').value,
-                rang: document.getElementById('task-rang').value,
-                notes: document.getElementById('task-notes').value,
-                status: 'todo',
-                createdAt: dateStr,
-                timestamp: Date.now()
+                parcel,
+                type,
+                comment,
+                date: dateStr
             };
 
-            tasksRef.push(newTask);
+            // Envoi de la tâche dans Firebase (génère une clé unique et synchronise tout le monde)
+            db.ref('tasks').push(newTask);
+
+            // Reset du formulaire
             document.getElementById('task-form').reset();
-            showTab('dashboard');
+        });
+
+        // Suppression d'une tâche
+        function deleteTask(key) {
+            db.ref('tasks').child(key).remove();
         }
-
-        function changeStatus(id, newStatus) {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-
-            tasksRef.child(id).update({
-                status: newStatus,
-                statusDate: dateStr
-            });
-        }
-
-        function deleteTask(id) {
-            if(confirm("Supprimer cette tâche pour tout le monde ?")) {
-                tasksRef.child(id).remove();
-            }
-        }
-
-        function selectParcelleForTask(parcelleId) {
-            showTab('add-task');
-            document.querySelectorAll('nav button')[1].classList.add('active');
-            document.querySelectorAll('nav button')[0].classList.remove('active');
-            document.querySelectorAll('nav button')[2].classList.remove('active');
-            
-            const select = document.getElementById('task-parcelle');
-            for(let i=0; i<select.options.length; i++) {
-                if(select.options[i].value.startsWith(parcelleId + ' -')) {
-                    select.selectedIndex = i;
-                    break;
-                }
-            }
-            updateRangHint();
-        }
-
-        function renderTasks() {
-            const container = document.getElementById('tasks-list');
-            let filtered = tasks;
-
-            if(currentCatFilter !== 'ALL') {
-                filtered = tasks.filter(t => t.cat === currentCatFilter);
-            }
-
-            if(filtered.length === 0) {
-                container.innerHTML = '<div class="empty-state">Aucune tâche enregistrée dans cette catégorie.</div>';
-                return;
-            }
-
-            container.innerHTML = filtered.map(t => {
-                let statusBadge = '<span class="badge badge-status-todo">À faire</span>';
-                if(t.status === 'progress') statusBadge = '<span class="badge badge-status-progress">En cours ⏳</span>';
-                if(t.status === 'done') statusBadge = `<span class="badge badge-status-done">Terminé ✅ (${t.statusDate || ''})</span>`;
-
-                return `
-                    <div class="task-card prio-${t.prio} ${t.status === 'done' ? 'status-done' : ''}">
-                        <div class="task-info">
-                            <h3>${t.title}</h3>
-                            <div class="task-meta">
-                                <span class="badge badge-cat">${t.cat}</span>
-                                <span class="badge">${t.prio}</span>
-                                ${statusBadge}
-                                ${t.parcelle ? `<span class="badge">📍 ${t.parcelle}</span>` : ''}
-                                ${t.rang ? `<span class="badge badge-rang">🔢 ${t.rang}</span>` : ''}
-                            </div>
-                            ${t.notes ? `<p style="font-size:0.85rem; margin-top:6px; color:#4a5568;">${t.notes}</p>` : ''}
-                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;">Créé le : ${t.createdAt || 'N/C'}</div>
-                        </div>
-                        <div class="task-actions">
-                            ${t.status !== 'progress' ? `<button class="btn-action btn-status" onclick="changeStatus('${t.id}', 'progress')">⏳ En cours</button>` : ''}
-                            ${t.status !== 'done' ? `<button class="btn-action btn-status" style="color: #22543d;" onclick="changeStatus('${t.id}', 'done')">✓ Terminer</button>` : ''}
-                            ${t.status !== 'todo' ? `<button class="btn-action btn-status" onclick="changeStatus('${t.id}', 'todo')">↺ À faire</button>` : ''}
-                            <button class="btn-action btn-delete" onclick="deleteTask('${t.id}')">Suppr.</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderParcelles() {
-            const container = document.getElementById('parcelles-container');
-            const search = document.getElementById('search-parcelle').value.toLowerCase();
-
-            const filtered = PARCELLES.filter(p => 
-                p.nom.toLowerCase().includes(search) || 
-                p.id.toString().includes(search) ||
-                p.type.toLowerCase().includes(search)
-            );
-
-            container.innerHTML = filtered.map(p => `
-                <div class="parcelle-item" onclick="selectParcelleForTask(${p.id})">
-                    <div class="num">N° ${p.id}</div>
-                    <div class="nom">${p.nom}</div>
-                    <div class="type">${p.type} ${p.rangs ? '• ' + p.rangs + ' rangs' : ''}</div>
-                </div>
-            `).join('');
-        }
-
-        init();
     </script>
 </body>
 </html>

@@ -561,4 +561,97 @@
 
         function deleteTask(id) {
             if(confirm("Supprimer cette tâche pour tout le monde ?")) {
-                tasksRef.child(id).remove(
+                tasksRef.child(id).remove();
+            }
+        }
+
+        function selectParcelleForTask(parcelleId) {
+            showTab('add-task');
+            const p = PARCELLES.find(item => item.id === parcelleId);
+            if(p) {
+                document.getElementById('task-cat').value = 'Vigne';
+                toggleParcelleSelect();
+                const select = document.getElementById('task-parcelle');
+                const targetVal = `${p.id} - ${p.nom} (${p.type})`;
+                select.value = targetVal;
+                updateRangHint();
+            }
+        }
+
+        function renderParcelles() {
+            const container = document.getElementById('parcelles-container');
+            const search = document.getElementById('search-parcelle').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = PARCELLES.filter(p => 
+                p.nom.toLowerCase().includes(search) || 
+                p.type.toLowerCase().includes(search) || 
+                p.id.toString().includes(search)
+            );
+
+            if(filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">Aucune parcelle trouvée.</div>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'parcelle-item';
+                div.onclick = () => selectParcelleForTask(p.id);
+                div.innerHTML = `
+                    <div class="num">Parcelle n°${p.id}</div>
+                    <div class="nom">${p.nom}</div>
+                    <div class="type">${p.type} ${p.rangs ? '• ' + p.rangs + ' rangs' : ''}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-list');
+            container.innerHTML = '';
+
+            const filtered = tasks.filter(t => currentCatFilter === 'ALL' || t.cat === currentCatFilter);
+
+            if(filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucune tâche enregistrée pour le moment.</div>';
+                return;
+            }
+
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `task-card prio-${t.prio} status-${t.status}`;
+                
+                let statusBadge = '';
+                if(t.status === 'todo') statusBadge = '<span class="badge badge-status-todo">À faire</span>';
+                else if(t.status === 'progress') statusBadge = '<span class="badge badge-status-progress">En cours</span>';
+                else if(t.status === 'done') statusBadge = '<span class="badge badge-status-done">Terminée</span>';
+
+                card.innerHTML = `
+                    <div class="task-info">
+                        <h3>${t.title}</h3>
+                        <div class="task-meta">
+                            <span class="badge badge-cat">${t.cat}</span>
+                            <span class="badge">Priorité: ${t.prio}</span>
+                            ${t.parcelle ? `<span class="badge">${t.parcelle}</span>` : ''}
+                            ${t.rang ? `<span class="badge badge-rang">${t.rang}</span>` : ''}
+                            ${statusBadge}
+                        </div>
+                        ${t.notes ? `<p style="font-size: 0.85rem; margin-top: 6px; color: var(--text-dark);">${t.notes}</p>` : ''}
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;">Créée le ${t.createdAt}</div>
+                    </div>
+                    <div class="task-actions">
+                        ${t.status !== 'done' ? `
+                            <button class="btn-action btn-status" onclick="changeStatus('${t.id}', 'done')">✓ Fait</button>
+                        ` : `
+                            <button class="btn-action btn-status" onclick="changeStatus('${t.id}', 'todo')">↺ Rouvrir</button>
+                        `}
+                        <button class="btn-action btn-delete" onclick="deleteTask('${t.id}')">Supprimer</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

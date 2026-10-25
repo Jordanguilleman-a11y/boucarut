@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boucarut Organisateur</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bordeaux: #6b1d2f;
+            --bordeaux-dark: #4a121f;
+            --gold: #d4af37;
+            --slate: #2c3e50;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #2d3748;
+            --text-muted: #718096;
+            --prio-urgent: #e53e3e;
+            --prio-haute: #dd6b20;
+            --prio-moyenne: #3182ce;
+            --prio-basse: #38a169;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body { background-color: var(--light-bg); color: var(--text-dark); padding-bottom: 80px; }
+        header {
+            background: linear-gradient(135deg, var(--bordeaux-dark), var(--bordeaux));
+            color: white; padding: 20px 15px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-bottom: 3px solid var(--gold);
+        }
+        header h1 { font-size: 1.5rem; letter-spacing: 1px; font-weight: 700; }
+        header p { font-size: 0.85rem; color: var(--gold); margin-top: 4px; }
+        nav { display: flex; background: var(--slate); overflow-x: auto; position: sticky; top: 0; z-index: 100; }
+        nav button {
+            flex: 1; min-width: 110px; padding: 14px 8px; background: none; border: none;
+            color: #a0aec0; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;
+        }
+        nav button.active { color: white; border-bottom-color: var(--gold); background: rgba(255,255,255,0.05); }
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: var(--card-bg); border-radius: 12px; padding: 18px; margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--bordeaux); border-bottom: 2px solid #edf2f7; padding-bottom: 6px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-dark); }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 0.95rem; background: #fff; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--bordeaux); box-shadow: 0 0 0 3px rgba(107, 29, 47, 0.1); }
+        .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { display: inline-block; width: 100%; padding: 12px; background: var(--bordeaux); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; text-align: center; transition: background 0.2s; }
+        .btn:hover { background: var(--bordeaux-dark); }
+        .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; }
+        .chip { padding: 6px 14px; border-radius: 20px; background: #e2e8f0; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; border: none; }
+        .chip.active { background: var(--bordeaux); color: white; }
+        .task-card { background: white; border-radius: 10px; padding: 14px; margin-bottom: 10px; border-left: 5px solid var(--prio-moyenne); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .task-card.prio-Urgent { border-left-color: var(--prio-urgent); }
+        .task-card.prio-Haute { border-left-color: var(--prio-haute); }
+        .task-card.prio-Moyenne { border-left-color: var(--prio-moyenne); }
+        .task-card.prio-Basse { border-left-color: var(--prio-basse); }
+        .task-card.status-done { opacity: 0.55; background: #f7fafc; }
+        .task-info { min-width: 0; overflow-wrap: anywhere; }
+        .task-info h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text-dark); }
+        .task-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: #edf2f7; color: var(--text-dark); }
+        .badge-cat { background: #e2e8f0; }
+        .badge-rang { background: #feebc8; color: #7b341e; }
+        .badge-status-todo { background: #fed7d7; color: #9b2c2c; }
+        .badge-status-progress { background: #feebc8; color: #9c4221; }
+        .badge-status-done { background: #c6f6d5; color: #22543d; }
+        .task-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+        .btn-action { background: #edf2f7; border: none; border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .btn-status { background: #e2e8f0; color: #2d3748; }
+        .btn-delete { background: #fed7d7; color: #9b2c2c; }
+        .parcelles-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+        .parcelle-item { background: white; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .parcelle-item:hover { border-color: var(--bordeaux); box-shadow: 0 2px 6px rgba(107, 29, 47, 0.15); }
+        .parcelle-item .num { font-weight: bold; color: var(--bordeaux); font-size: 0.9rem; }
+        .parcelle-item .nom { font-weight: 600; margin: 2px 0; }
+        .parcelle-item .type { font-size: 0.75rem; color: var(--text-muted); }
+        .empty-state { text-align: center; padding: 30px; color: var(--text-muted); font-style: italic; }
+        @media (max-width: 520px) {
+            .row-grid { grid-template-columns: 1fr; }
+            .task-card { flex-direction: column; }
+            .task-actions { flex-direction: row; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>BOUCARUT ORGANISATEUR</h1>
+        <p>Gestion du Domaine &amp; Travaux</p>
+    </header>
+    <nav>
+        <button class="active" onclick="showTab('dashboard', this)">Tableau de bord</button>
+        <button onclick="showTab('add-task', this)">+ Nouvelle tâche</button>
+        <button onclick="showTab('parcelles', this)">Parcelles</button>
+    </nav>
+    <div class="container">
+        <div id="dashboard" class="tab-content active">
+            <div class="filters">
+                <button class="chip active" onclick="filterCat('ALL', this)">Toutes</button>
+                <button class="chip" onclick="filterCat('Vigne', this)">Vigne</button>
+                <button class="chip" onclick="filterCat('Cave et Chai', this)">Cave &amp; Chai</button>
+                <button class="chip" onclick="filterCat('Entretien du Domaine', this)">Entretien Domaine</button>
+                <button class="chip" onclick="filterCat('Administratif', this)">Administratif</button>
+            </div>
+            <div id="tasks-list"><div class="empty-state">Connexion à la base de données...</div></div>
+        </div>
+        <div id="add-task" class="tab-content">
+            <div class="card">
+                <h2>Créer une tâche</h2>
+                <form id="task-form" onsubmit="saveTask(event)">
+                    <div class="form-group">
+                        <label for="task-title">Titre de l'intervention *</label>
+                        <input type="text" id="task-title" placeholder="Ex: Remplacement piquets, Décavaillonnage..." required>
+                    </div>
+                    <div class="row-grid">
+                        <div class="form-group">
+                            <label for="task-cat">Catégorie *</label>
+                            <select id="task-cat" required onchange="toggleParcelleSelect()">
+                                <option value="Vigne">Vigne</option><option value="Cave et Chai">Cave et Chai</option>
+                                <option value="Entretien du Domaine">Entretien du Domaine</option><option value="Administratif">Administratif</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-prio">Priorité *</label>
+                            <select id="task-prio" required>
+                                <option value="Urgent">🔴 Urgent</option><option value="Haute" selected>🟠 Haute</option>
+                                <option value="Moyenne">🔵 Moyenne</option><option value="Basse">🟢 Basse</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="parcelle-group">
+                        <label for="task-parcelle">Parcelle / Zone</label>
+                        <select id="task-parcelle" onchange="updateRangHint()"><option value="">-- Sélectionner une parcelle --</option></select>
+                    </div>
+                    <div class="form-group" id="rang-group">
+                        <label for="task-rang">Numéro de rang(s) précis</label>
+                        <input type="text" id="task-rang" placeholder="Ex: Rang 4, ou Rangs 12 à 18">
+                        <small id="rang-hint" style="color: var(--text-muted); font-size: 0.75rem;"></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-notes">Notes / Instructions complémentaires</label>
+                        <textarea id="task-notes" rows="3" placeholder="Détails du matériel nécessaire, observations..."></textarea>
+                    </div>
+                    <button type="submit" class="btn">Enregistrer la tâche</button>
+                </form>
+            </div>
+        </div>
+        <div id="parcelles" class="tab-content">
+            <div class="card">
+                <h2>Liste des Parcelles</h2>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <input type="text" id="search-parcelle" placeholder="Rechercher par nom, numéro, cépage..." oninput="renderParcelles()">
+                </div>
+                <div class="parcelles-list" id="parcelles-container"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://boucarut-organisateur-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        const PARCELLES = [
+            { id: 1, nom: "Viognier", rangs: 15, type: "IGP" },
+            { id: 2, nom: "Roussanne", rangs: 22, type: "IGP" },
+            { id: 3, nom: "Marselan", rangs: 27, type: "IGP" },
+            { id: 4, nom: "Merlot", rangs: 31, type: "IGP" },
+            { id: 5, nom: "Vieille Syrah plaine", rangs: 10, type: "IGP" },
+            { id: 6, nom: "Jeune Syrah plaine", rangs: 18, type: "IGP" },
+            { id: 7, nom: "Grenache Pylône", rangs: 18, type: "IGP" },
+            { id: 8, nom: "Jachère vieux grenache", rangs: 0, type: "IGP" },
+            { id: 9, nom: "Grenache vieux cabanon", rangs: 9, type: "IGP" },
+            { id: 10, nom: "Syrah Pontin", rangs: 25, type: "IGP" },
+            { id: 11, nom: "Jeune Grenache cavallières", rangs: 7, type: "IGP" },
+            { id: 12, nom: "Grenache Cavallières", rangs: 0, type: "IGP" },
+            { id: 13, nom: "Mourvèdre chapelle", rangs: 0, type: "AOC" },
+            { id: 14, nom: "Grenache Château", rangs: 18, type: "AOC" },
+            { id: 15, nom: "Jachère cave", rangs: 0, type: "AOC" },
+            { id: 16, nom: "Mourvèdre cavallières", rangs: 17, type: "AOC" },
+            { id: 17, nom: "Plateau", rangs: 89, type: "AOC" },
+            { id: 18, nom: "Jachère plateau", rangs: 0, type: "AOC" },
+            { id: 19, nom: "Viognier", rangs: 11, type: "AOC" },
+            { id: 20, nom: "Roussanne", rangs: 11, type: "AOC" },
+            { id: 21, nom: "Clos échalas", rangs: 4, type: "AOC" },
+            { id: 22, nom: "Syrah petit Beurreux", rangs: 17, type: "AOC" },
+            { id: 23, nom: "Cinsault", rangs: 7, type: "AOC" },
+            { id: 24, nom: "Syrah chenins", rangs: 40, type: "AOC" },
+            { id: 25, nom: "Grenache chemins", rangs: 46, type: "AOC" },
+            { id: 26, nom: "Jachère chemins", rangs: 0, type: "AOC" },
+            { id: 27, nom: "Syrah Bosquet", rangs: 43, type: "AOC" },
+            { id: 28, nom: "Grenache Brequet", rangs: 51, type: "AOC" },
+            { id: 29, nom: "Tavel Maleven", rangs: 0, type: "Tavel / AOC" },
+            { id: 30, nom: "Tavel Romagnas", rangs: 0, type: "Tavel / AOC" },
+            { id: 0, nom: "Truffière", rangs: 0, type: "Autre" }
+        ];
+
+        let tasks = [];
+        let currentCatFilter = 'ALL';
+        let db = null;
+        let tasksRef = null;
+        let firebaseReady = false;
+
+        function init() {
+            populateParcelleSelect();
+            renderParcelles();
+            toggleParcelleSelect();
+
+            if (typeof firebase === 'undefined') {
+                showConnectionError("Impossible de charger Firebase. Vérifie ta connexion Internet.");
+                return;
+            }
+
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                tasksRef = db.ref('tasks');
+                tasksRef.on('value', (snapshot) => {
+                    firebaseReady = true;
+                    tasks = [];
+                    const data = snapshot.val();
+                    if (data) {
+                        Object.keys(data).forEach(key => tasks.push({ id: key, ...data[key] }));
+                        tasks.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    }
+                    renderTasks();
+                }, (error) => {
+                    showConnectionError("Accès à la base de données refusé : " + error.message);
+                });
+            } catch (error) {
+                showConnectionError("Connexion impossible : " + error.message);
+            }
+        }
+
+        function showConnectionError(message) {
+            const container = document.getElementById('tasks-list');
+            container.innerHTML = '<div class="empty-state"></div>';
+            container.firstElementChild.textContent = message;
+        }
+
+        function showTab(tabId, button) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            const targetButton = button || [...document.querySelectorAll('nav button')].find(b =>
+                b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabId + "'")
+            );
+            if (targetButton) targetButton.classList.add('active');
+        }
+
+        function populateParcelleSelect() {
+            const select = document.getElementById('task-parcelle');
+            select.innerHTML = '<option value="">-- Sélectionner une parcelle --</option>';
+            PARCELLES.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = `${p.id} - ${p.nom} (${p.type})`;
+                opt.textContent = `${p.id} - ${p.nom} (${p.type}) ${p.rangs ? '- ' + p.rangs + ' rangs' : ''}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function updateRangHint() {
+            const val = document.getElementById('task-parcelle').value;
+            const hint = document.getElementById('rang-hint');
+            if (!val) { hint.textContent = ''; return; }
+            const id = parseInt(val.split(' - ')[0], 10);
+            const p = PARCELLES.find(item => item.id === id);
+            hint.textContent = p && p.rangs > 0 ? `Cette parcelle compte ${p.rangs} rangs au total.` : '';
+        }
+
+        function toggleParcelleSelect() {
+            const cat = document.getElementById('task-cat').value;
+            document.getElementById('parcelle-group').style.display = 'block';
+            document.getElementById('rang-group').style.display = cat === 'Vigne' ? 'block' : 'none';
+        }
+
+        function filterCat(cat, el) {
+            currentCatFilter = cat;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderTasks();
+        }
+
+        async function saveTask(e) {
+            e.preventDefault();
+            if (!tasksRef || !firebaseReady) {
+                alert("La base de données n'est pas encore connectée. Vérifie ta connexion ou réessaie dans quelques instants.");
+                return;
+            }
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            const newTask = {
+                title: document.getElementById('task-title').value.trim(),
+                cat: document.getElementById('task-cat').value,
+                prio: document.getElementById('task-prio').value,
+                parcelle: document.getElementById('task-parcelle').value,
+                rang: document.getElementById('task-rang').value.trim(),
+                notes: document.getElementById('task-notes').value.trim(),
+                status: 'todo', createdAt: dateStr, timestamp: Date.now()
+            };
+            try {
+                await tasksRef.push(newTask);
+                document.getElementById('task-form').reset();
+                toggleParcelleSelect();
+                document.getElementById('rang-hint').textContent = '';
+                showTab('dashboard');
+            } catch (error) {
+                alert("Impossible d'enregistrer la tâche : " + error.message);
+            }
+        }
+
+        async function changeStatus(id, newStatus) {
+            if (!tasksRef) return alert("Base de données non connectée.");
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            try {
+                await tasksRef.child(id).update({ status: newStatus, statusDate: dateStr });
+            } catch (error) {
+                alert("Impossible de modifier la tâche : " + error.message);
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm("Supprimer cette tâche pour tout le monde ?")) return;
+            if (!tasksRef) return alert("Base de données non connectée.");
+            try {
+                await tasksRef.child(id).remove();
+            } catch (error) {
+                alert("Impossible de supprimer la tâche : " + error.message);
+            }
+        }
+
+        function selectParcelleForTask(parcelleId) {
+            showTab('add-task');
+            const select = document.getElementById('task-parcelle');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value.startsWith(parcelleId + ' -')) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            document.getElementById('task-cat').value = 'Vigne';
+            toggleParcelleSelect();
+            updateRangHint();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-list');
+            const filtered = currentCatFilter === 'ALL' ? tasks : tasks.filter(t => t.cat === currentCatFilter);
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucune tâche enregistrée dans cette catégorie.</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(t => {
+                const statusBadge = t.status === 'progress'
+                    ? '<span class="badge badge-status-progress">En cours ⏳</span>'
+                    : t.status === 'done'
+                        ? `<span class="badge badge-status-done">Terminé ✅ (${escapeHtml(t.statusDate || '')})</span>`
+                        : '<span class="badge badge-status-todo">À faire</span>';
+                const id = escapeHtml(t.id);
+                return `
+                    <div class="task-card prio-${escapeHtml(t.prio)} ${t.status === 'done' ? 'status-done' : ''}">
+                        <div class="task-info">
+                            <h3>${escapeHtml(t.title)}</h3>
+                            <div class="task-meta">
+                                <span class="badge badge-cat">${escapeHtml(t.cat)}</span>
+                                <span class="badge">${escapeHtml(t.prio)}</span>
+                                ${statusBadge}
+                                ${t.parcelle ? `<span class="badge">📍 ${escapeHtml(t.parcelle)}</span>` : ''}
+                                ${t.rang ? `<span class="badge badge-rang">🔢 ${escapeHtml(t.rang)}</span>` : ''}
+                            </div>
+                            ${t.notes ? `<p style="font-size:0.85rem; margin-top:6px; color:#4a5568;">${escapeHtml(t.notes)}</p>` : ''}
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:6px;">Créé le : ${escapeHtml(t.createdAt || 'N/C')}</div>
+                        </div>
+                        <div class="task-actions">
+                            ${t.status !== 'progress' ? `<button class="btn-action btn-status" onclick="changeStatus('${id}', 'progress')">⏳ En cours</button>` : ''}
+                            ${t.status !== 'done' ? `<button class="btn-action btn-status" style="color:#22543d;" onclick="changeStatus('${id}', 'done')">✓ Terminer</button>` : ''}
+                            ${t.status !== 'todo' ? `<button class="btn-action btn-status" onclick="changeStatus('${id}', 'todo')">↺ À faire</button>` : ''}
+                            <button class="btn-action btn-delete" onclick="deleteTask('${id}')">Suppr.</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderParcelles() {
+            const container = document.getElementById('parcelles-container');
+            const search = document.getElementById('search-parcelle').value.toLowerCase().trim();
+            const filtered = PARCELLES.filter(p =>
+                p.nom.toLowerCase().includes(search) ||
+                String(p.id).includes(search) ||
+                p.type.toLowerCase().includes(search)
+            );
+            container.innerHTML = filtered.map(p => `
+                <div class="parcelle-item" onclick="selectParcelleForTask(${p.id})">
+                    <div class="num">N° ${p.id}</div>
+                    <div class="nom">${escapeHtml(p.nom)}</div>
+                    <div class="type">${escapeHtml(p.type)} ${p.rangs ? '• ' + p.rangs + ' rangs' : ''}</div>
+                </div>`).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>

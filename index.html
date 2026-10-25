@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boucarut Organisateur</title>
-    <!-- Firebase App (Core) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <!-- Firebase Realtime Database -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
     <style>
         :root {
             --primary: #5c763d;
@@ -214,7 +209,7 @@
 
     <header>
         <h1>Domaine Boucarut</h1>
-        <p>Organisateur Vignoble (En direct)</p>
+        <p>Organisateur Vignoble</p>
     </header>
 
     <div class="container">
@@ -256,7 +251,7 @@
             <div class="card">
                 <h2>Tâches Enregistrées</h2>
                 <div id="tasks-list">
-                    <p style="font-size: 0.85rem; color: #718096; text-align: center; padding: 1rem;">Chargement des tâches...</p>
+                    <p style="font-size: 0.85rem; color: #718096; text-align: center; padding: 1rem;">Aucune tâche pour le moment.</p>
                 </div>
             </div>
         </div>
@@ -288,13 +283,6 @@
     </nav>
 
     <script>
-        // Configuration Firebase
-        const firebaseConfig = {
-            databaseURL: "https://boucarut-organisateur-default-rtdb.europe-west1.firebasedatabase.app"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
         // Gestion des vues
         function switchView(viewName, btnIndex) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -308,24 +296,29 @@
             document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
         }
 
-        // Écoute en temps réel de la base de données Firebase
-        const tasksRef = db.ref('tasks');
-        
-        tasksRef.on('value', (snapshot) => {
-            const data = snapshot.val();
+        // Gestion du stockage local (LocalStorage)
+        const STORAGE_KEY = 'boucarut_tasks_v1';
+
+        function getTasks() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveTasks(tasks) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            const tasks = getTasks();
             const listEl = document.getElementById('tasks-list');
-            
-            if (!data) {
+
+            if (tasks.length === 0) {
                 listEl.innerHTML = '<p style="font-size: 0.85rem; color: #718096; text-align: center; padding: 1rem;">Aucune tâche pour le moment.</p>';
                 return;
             }
 
             listEl.innerHTML = '';
-            // Transformation de l'objet Firebase en tableau
-            const tasksKeys = Object.keys(data).reverse(); // Les plus récentes en haut
-            
-            tasksKeys.forEach((key) => {
-                const task = data[key];
+            tasks.forEach((task, index) => {
                 const item = document.createElement('div');
                 item.className = 'task-item';
                 item.innerHTML = `
@@ -335,11 +328,18 @@
                         ${task.comment ? `<p style="margin-top: 4px;">${task.comment}</p>` : ''}
                         <p style="font-size: 0.7rem; color: #a0aec0; margin-top: 4px;">${task.date}</p>
                     </div>
-                    <button class="delete-btn" onclick="deleteTask('${key}')">&times;</button>
+                    <button class="delete-btn" onclick="deleteTask(${index})">&times;</button>
                 `;
                 listEl.appendChild(item);
             });
-        });
+        }
+
+        function deleteTask(index) {
+            const tasks = getTasks();
+            tasks.splice(index, 1);
+            saveTasks(tasks);
+            renderTasks();
+        }
 
         // Soumission du formulaire
         document.getElementById('task-form').addEventListener('submit', function(e) {
@@ -359,17 +359,17 @@
                 date: dateStr
             };
 
-            // Envoi de la tâche dans Firebase (génère une clé unique et synchronise tout le monde)
-            db.ref('tasks').push(newTask);
+            const tasks = getTasks();
+            tasks.unshift(newTask); // Ajoute en haut de liste
+            saveTasks(tasks);
 
             // Reset du formulaire
             document.getElementById('task-form').reset();
+            renderTasks();
         });
 
-        // Suppression d'une tâche
-        function deleteTask(key) {
-            db.ref('tasks').child(key).remove();
-        }
+        // Chargement initial au démarrage
+        renderTasks();
     </script>
 </body>
 </html>

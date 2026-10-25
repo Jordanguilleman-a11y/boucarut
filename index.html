@@ -313,7 +313,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="init()">
 
     <header>
         <h1>BOUCARUT ORGANISATEUR</h1>
@@ -321,9 +321,9 @@
     </header>
 
     <nav>
-        <button class="active" onclick="showTab('dashboard')">Tableau de bord</button>
-        <button onclick="showTab('add-task')">+ Nouvelle tâche</button>
-        <button onclick="showTab('parcelles')">Parcelles</button>
+        <button id="nav-dashboard" class="active" onclick="showTab('dashboard')">Tableau de bord</button>
+        <button id="nav-add-task" onclick="showTab('add-task')">+ Nouvelle tâche</button>
+        <button id="nav-parcelles" onclick="showTab('parcelles')">Parcelles</button>
     </nav>
 
     <div class="container">
@@ -476,7 +476,10 @@
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
             
             document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            
+            if(tabId === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
+            if(tabId === 'add-task') document.getElementById('nav-add-task').classList.add('active');
+            if(tabId === 'parcelles') document.getElementById('nav-parcelles').classList.add('active');
         }
 
         function populateParcelleSelect() {
@@ -558,12 +561,4 @@
 
         function deleteTask(id) {
             if(confirm("Supprimer cette tâche pour tout le monde ?")) {
-                tasksRef.child(id).remove();
-            }
-        }
-
-        function selectParcelleForTask(parcelleId) {
-            showTab('add-task');
-            document.querySelectorAll('nav button')[1].classList.add('active');
-            document.querySelectorAll('nav button')[0].classList.remove('active');
-            document.querySelectorAll('nav button')[2].classList.rem
+                tasksRef.child(id).remove(
